@@ -15,7 +15,7 @@ const leftPaddle = {
   y: canvas.height / 2 - paddleHeight / 2,
   width: paddleWidth,
   height: paddleHeight,
-  dy: 3
+  dy: 2
 };
 
 const rightPaddle = {
@@ -23,7 +23,7 @@ const rightPaddle = {
   y: canvas.height / 2 - paddleHeight / 2,
   width: paddleWidth,
   height: paddleHeight,
-  dy: 3
+  dy: 2
 };
 
 const ball = {
@@ -58,7 +58,10 @@ function drawBall(x, y, size, visible) {
 }
 
 function movePaddles() {
- document.addEventListener('keydown', (e) => {
+  document.addEventListener('keydown', (e) => {
+    if (['ArrowUp', 'ArrowDown'].includes(e.key)) {
+      e.preventDefault(); // Prevent the default behavior for arrow keys
+    }
     keyState[e.key] = true;
   });
 
