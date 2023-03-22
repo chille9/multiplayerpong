@@ -94,6 +94,41 @@ function movePaddles() {
   }
 }
 
+// Add this function to create the screen shake effect
+function shakeScreen(duration, intensity) {
+  const originalPosition = canvas.style.position;
+  const startTime = performance.now();
+
+  function shake() {
+    const elapsed = performance.now() - startTime;
+    if (elapsed < duration) {
+      canvas.style.position = 'relative';
+      canvas.style.left = Math.random() * intensity * 2 - intensity + 'px';
+      canvas.style.top = Math.random() * intensity * 2 - intensity + 'px';
+      requestAnimationFrame(shake);
+    } else {
+      canvas.style.position = originalPosition;
+      canvas.style.left = '';
+      canvas.style.top = '';
+    }
+  }
+
+  shake();
+}
+
+// Add this function to centralize the ball resetting logic
+function resetBall(delay) {
+  ball.x = canvas.width / 2;
+  ball.y = canvas.height / 2;
+  ball.dx = 0;
+  ball.dy = 0;
+
+  setTimeout(() => {
+    ball.dx = Math.random() > 0.5 ? 2 : -2;
+    ball.dy = 2;
+  }, delay);
+}
+
 
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -128,6 +163,8 @@ function gameLoop() {
   ball.y = canvas.height / 2;
   ball.dx = 2;
   ball.dy = 2;
+  shakeScreen(300, 5); // Duration: 300ms, Intensity: 5px
+    resetBall(1000); // Delay: 1000ms
 }
 
 if (ball.x > canvas.width) {
@@ -136,6 +173,8 @@ if (ball.x > canvas.width) {
   ball.y = canvas.height / 2;
   ball.dx = -2;
   ball.dy = 2;
+  shakeScreen(300, 5); // Duration: 300ms, Intensity: 5px
+    resetBall(1000); // Delay: 1000ms
 }
 
 
