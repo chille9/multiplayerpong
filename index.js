@@ -7,6 +7,7 @@ const ballSize = 8;
 const speedIncreaseFactor = 1.1;
 let lastSpeedIncrease = 0;
 const speedIncreaseInterval = 500;
+let ballVisible = true;
 
 
 const leftPaddle = {
@@ -14,7 +15,7 @@ const leftPaddle = {
   y: canvas.height / 2 - paddleHeight / 2,
   width: paddleWidth,
   height: paddleHeight,
-  dy: 5
+  dy: 3
 };
 
 const rightPaddle = {
@@ -22,7 +23,7 @@ const rightPaddle = {
   y: canvas.height / 2 - paddleHeight / 2,
   width: paddleWidth,
   height: paddleHeight,
-  dy: 5
+  dy: 3
 };
 
 const ball = {
@@ -45,34 +46,19 @@ function drawPaddle(x, y, width, height) {
   ctx.closePath();
 }
 
-function drawBall(x, y, size) {
-  ctx.beginPath();
-  ctx.arc(x, y, size, 0, Math.PI * 2);
-  ctx.fillStyle = 'white';
-  ctx.fill();
-  ctx.closePath();
+// Modify the drawBall function to accept a `visible` parameter
+function drawBall(x, y, size, visible) {
+  if (visible) {
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fillStyle = 'white';
+    ctx.fill();
+    ctx.closePath();
+  }
 }
-
-function drawScore(left, right) {
-  ctx.font = '24px Arial';
-  ctx.fillStyle = 'white';
-  ctx.fillText(left, canvas.width / 4, 30);
-  ctx.fillText(right, (canvas.width / 4) * 3, 30);
-}
-
-function collision(ball, paddle) {
-  return (
-    ball.x + ball.size >= paddle.x &&
-    ball.x <= paddle.x + paddle.width &&
-    ball.y + ball.size >= paddle.y &&
-    ball.y <= paddle.y + paddle.height
-  );
-}
-
-const keyState = {};
 
 function movePaddles() {
-  document.addEventListener('keydown', (e) => {
+ document.addEventListener('keydown', (e) => {
     keyState[e.key] = true;
   });
 
@@ -93,6 +79,40 @@ function movePaddles() {
     leftPaddle.y += leftPaddle.dy;
   }
 }
+
+// Add this function to create the ball blinking effect
+function blinkBall(times, interval) {
+  let blinkCount = 0;
+
+  function blink() {
+    ballVisible = !ballVisible;
+    blinkCount++;
+
+    if (blinkCount < times * 2) {
+      setTimeout(blink, interval);
+    }
+  }
+
+  blink();
+}
+
+function drawScore(left, right) {
+  ctx.font = '24px Arial';
+  ctx.fillStyle = 'white';
+  ctx.fillText(left, canvas.width / 4, 30);
+  ctx.fillText(right, (canvas.width / 4) * 3, 30);
+}
+
+function collision(ball, paddle) {
+  return (
+    ball.x + ball.size >= paddle.x &&
+    ball.x <= paddle.x + paddle.width &&
+    ball.y + ball.size >= paddle.y &&
+    ball.y <= paddle.y + paddle.height
+  );
+}
+
+const keyState = {};
 
 // Add this function to create the screen shake effect
 function shakeScreen(duration, intensity) {
@@ -130,6 +150,29 @@ function resetBall(delay) {
 }
 
 
+function randomlyIncreaseBallSpeed(minChance, minFactor, maxFactor) {
+  const chance = Math.random();
+
+  if (chance >= minChance) {
+    const factor = Math.random() * (maxFactor - minFactor) + minFactor;
+    ball.dx *= factor;
+    ball.dy *= factor;
+  }
+}
+
+function scheduleRandomSpeedIncrease(minInterval, maxInterval) {
+  const interval = Math.random() * (maxInterval - minInterval) + minInterval;
+
+  setTimeout(() => {
+    blinkBall(2, 100); // Blink 2 times with a 100ms interval
+    setTimeout(() => {
+      randomlyIncreaseBallSpeed(0, 1.1, 1.3); // 100% chance to increase speed by 10% to 30%
+    }, 500); // Wait for the blinking effect to complete before increasing the speed
+    scheduleRandomSpeedIncrease(minInterval, maxInterval);
+  }, interval);
+}
+
+
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -143,17 +186,17 @@ function gameLoop() {
     ball.dy *= -1;
   }
 
- if (collision(ball, leftPaddle) || collision(ball, rightPaddle)) {
-  const currentTime = performance.now();
+  if (collision(ball, leftPaddle) || collision(ball, rightPaddle)) {
+    const currentTime = performance.now();
 
-  if (currentTime - lastSpeedIncrease > speedIncreaseInterval) {
-    ball.dx *= -speedIncreaseFactor;
-    ball.dy *= speedIncreaseFactor;
-    lastSpeedIncrease = currentTime;
-  } else {
-    ball.dx *= -1;
+    if (currentTime - lastSpeedIncrease > speedIncreaseInterval) {
+      ball.dx *= -speedIncreaseFactor;
+      ball.dy *= speedIncreaseFactor;
+      lastSpeedIncrease = currentTime;
+    } else {
+      ball.dx *= -1;
+    }
   }
-}
 
 
 
@@ -178,15 +221,29 @@ if (ball.x > canvas.width) {
 }
 
 
-  drawPaddle(leftPaddle.x, leftPaddle.y, leftPaddle.width, leftPaddle.height);
+   drawPaddle(leftPaddle.x, leftPaddle.y, leftPaddle.width, leftPaddle.height);
   drawPaddle(rightPaddle.x, rightPaddle.y, rightPaddle.width, rightPaddle.height);
-  drawBall(ball.x, ball.y, ball.size);
+  drawBall(ball.x, ball.y, ball.size, ballVisible);
   drawScore(leftScore, rightScore);
+
+  // Move the paddle movement here
+  if (keyState['ArrowUp']) {
+    rightPaddle.y -= rightPaddle.dy;
+  }
+  if (keyState['ArrowDown']) {
+    rightPaddle.y += rightPaddle.dy;
+  }
+  if (keyState['w'] || keyState['W']) {
+    leftPaddle.y -= leftPaddle.dy;
+  }
+  if (keyState['s'] || keyState['S']) {
+    leftPaddle.y += leftPaddle.dy;
+  }
 
   movePaddles();
   requestAnimationFrame(gameLoop);
 }
 
 gameLoop();
-
-
+// use this function here if you want random speed increase!!
+scheduleRandomSpeedIncrease(10000, 55000);
